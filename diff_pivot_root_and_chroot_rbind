@@ -1,0 +1,63 @@
+--- jchroot.c	2026-05-03 18:03:51.974188805 +0200
++++ jchroot.c.chroot.rbind	2026-05-03 18:02:36.310280390 +0200
+@@ -125,49 +125,14 @@
+   return step7(config);
+ }
+ 
+-/* Step 5: Chroot with pivot_root */
++/* Step 5: Chroot */
+ static int step5(struct config *config) {
+-  char *template = NULL;
+-  char *p = NULL;
+-  if (mount(config->target, config->target, "bind", MS_BIND|MS_REC, "") == -1) {
+-    fprintf(stderr, "unable to turn new root into mountpoint: %m\n");
+-    return EXIT_FAILURE;
+-  }
+-  if (asprintf(&template, "%s/.pivotrootXXXXXX", config->target) == -1) {
+-    fprintf(stderr, "unable to allocate template directory: %m\n");
+-    return EXIT_FAILURE;
+-  }
+-  if (mkdtemp(template) == NULL) {
+-    fprintf(stderr, "unable to create temporary directory for pivot root: %m\n");
+-    free(template);
+-    return EXIT_FAILURE;
+-  }
+-  if (syscall(__NR_pivot_root, config->target, template) == -1) {
+-    fprintf(stderr, "unable to pivot root to %s: %m\n", config->target);
+-    rmdir(template);
+-    free(template);
++  if (chroot(config->target)) {
++    fprintf(stderr, "unable to chroot to %s: %m\n", config->target);
+     return EXIT_FAILURE;
+   }
+   if (chdir("/")) {
+     fprintf(stderr, "unable to go into chroot: %m\n");
+-    /* We should cleanup the mount and the temporary directory, but we
+-     * have pivoted and we won't are likely to still use the old
+-     * mount... */
+-    free(template);
+-    return EXIT_FAILURE;
+-  }
+-  p = template;
+-  p += strlen(config->target);
+-  if (umount2(p, MNT_DETACH) == -1) {
+-    fprintf(stderr, "unable to umount old root: %m\n");
+-    /* Again, cannot really clean... */
+-    free(template);
+-    return EXIT_FAILURE;
+-  }
+-  if (rmdir(p) == -1) {
+-    fprintf(stderr, "unable to remove directory for old root: %m\n");
+-    /* ... */
+-    free(template);
+     return EXIT_FAILURE;
+   }
+   return step6(config);
+@@ -206,6 +171,7 @@
+   { "diratime",   1, MS_NODIRATIME  },
+   { "nodiratime", 0, MS_NODIRATIME  },
+   { "bind",       0, MS_BIND        },
++  { "rbind",      0, MS_BIND|MS_REC },
+   { NULL,         0, 0              },
+ };
+ 
