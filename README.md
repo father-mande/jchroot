@@ -66,12 +66,3 @@ Related projects
 
 [ChrootX](https://github.com/Spiritdude/ChrootX) is a wrapper around
 `chroot`/`jchroot`.
-
-=======================================================================================
-Added jchroot.c modified chroot replace pivot_root for some NAS architecture
-Added a version modified with the addition of rbind as choice for mount in fstab .
-How-to :
-replace jchroot.c by the modified version and do
-make
-Tested on x86_64 and arm64 NAS
-======================================================================================
